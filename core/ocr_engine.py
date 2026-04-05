@@ -1,7 +1,7 @@
 import pytesseract
 from PIL import Image
 import os
-from bot import bot
+from bot_instance import bot
 
 def photo2text_parser(message) -> str:
     chat_id = message.chat.id

@@ -1,5 +1,8 @@
-from bot import bot
+import json
+
+from bot_instance import bot
 from core.ocr_engine import photo2text_parser
+from core.parser import parse_lesson_to_json
 
 
 def register_handlers():
@@ -22,7 +25,9 @@ def register_handlers():
             bot.send_message(chat_id, "🔄 Начало конвертации...")
 
             text = photo2text_parser(message)
+
             if not text:
                 bot.reply_to(message, "Не удалось распознать текст.")
             else:
-                bot.reply_to(message, f"Распознано:\n{text}")
+                processed_json = parse_lesson_to_json(text, additional_requirements)
+                bot.reply_to(message, json.dumps(processed_json, ensure_ascii=False, indent=2))

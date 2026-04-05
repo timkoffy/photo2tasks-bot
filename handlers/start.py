@@ -1,4 +1,4 @@
-from bot import bot
+from bot_instance import bot
 
 WELCOME_MESSAGE = """
 📸 Привет! Я Photo2Tasks Bot — твой помощник в распределении учебных вопросов и докладов.
