@@ -1,7 +1,8 @@
 import sqlite3
 import uuid
+from typing import List, Dict, Any, Optional
 
-DB_PATH = "../sessions.db"
+DB_PATH = "sessions.db"
 
 def init_db():
     with sqlite3.connect(DB_PATH) as conn:
@@ -14,13 +15,12 @@ def init_db():
                 creator_username TEXT,
                 creator_name TEXT,
                 title TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
             CREATE TABLE IF NOT EXISTS items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_id INTEGER NOT NULL,
                 item_number INTEGER,
-                item_type TEXT,
                 title TEXT NOT NULL,
                 FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
             );
@@ -31,20 +31,89 @@ def init_db():
                 username TEXT,
                 first_name TEXT,
                 last_name TEXT,
+                selected_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
+                UNIQUE(item_id, user_id)
             );
         """)
 
-def create_session(chat_id: int, message_id: int, creator_username: str, creator_name: str, title: str) -> str:
+# session managing
+def create_session(chat_id: int, message_id: int, creator_username: str, creator_name: str, title: str) -> tuple:
     session_uuid = str(uuid.uuid4())
     with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
+        cursor = conn.execute(
             """INSERT INTO sessions (session_uuid, chat_id, message_id, creator_username, creator_name, title)
                VALUES (?, ?, ?, ?, ?, ?)""",
             (session_uuid, chat_id, message_id, creator_username, creator_name, title)
         )
-    return session_uuid
+        session_id = cursor.lastrowid
+    return session_uuid, session_id
 
 def delete_session(session_uuid: str):
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("DELETE FROM sessions WHERE session_uuid = ?", (session_uuid,))
+
+def get_session_by_uuid(session_uuid: str) -> Optional[Dict[str, Any]]:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("SELECT * FROM sessions WHERE session_uuid = ?", (session_uuid,)).fetchone()
+        return dict(row) if row else None
+
+def get_session_by_message_id(chat_id: int, message_id: int) -> Optional[Dict[str, Any]]:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT * FROM sessions WHERE chat_id = ? AND message_id = ?",
+            (chat_id, message_id)
+        ).fetchone()
+        return dict(row) if row else None
+
+
+# item managing
+def add_item(session_id: int, item_number: int, title: str):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """INSERT INTO items (session_id, item_number, title)
+               VALUES (?, ?, ?)""",
+            (session_id, item_number, title)
+        )
+
+def get_items_by_session(session_id: int) -> List[Dict[str, Any]]:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT * FROM items WHERE session_id = ? ORDER BY item_number",
+            (session_id,)
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+# select item methods
+def select_item(item_id: int, user_id: int, username: str, first_name: str, last_name: str) -> bool:
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute(
+                """INSERT INTO selections (item_id, user_id, username, first_name, last_name)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (item_id, user_id, username, first_name, last_name)
+            )
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+def unselect_item(item_id: int, user_id: int) -> bool:
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.execute(
+            "DELETE FROM selections WHERE item_id = ? AND user_id = ?",
+            (item_id, user_id)
+        )
+        return cursor.rowcount > 0
+
+def get_selections_for_item(item_id: int) -> List[Dict[str, Any]]:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT * FROM selections WHERE item_id = ?",
+            (item_id,)
+        ).fetchall()
+        return [dict(row) for row in rows]

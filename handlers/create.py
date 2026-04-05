@@ -3,6 +3,7 @@ import json
 from bot_instance import bot
 from core.ocr_engine import photo2text_parser
 from core.parser import parse_lesson_to_json
+from db.db_manager import save_sections_to_db
 
 
 def register_handlers():
@@ -30,4 +31,10 @@ def register_handlers():
                 bot.reply_to(message, "Не удалось распознать текст.")
             else:
                 processed_json = parse_lesson_to_json(text, additional_requirements)
-                bot.reply_to(message, json.dumps(processed_json, ensure_ascii=False, indent=2))
+                if processed_json:
+                    save_sections_to_db(
+                        chat_id=message.chat.id,
+                        sections=processed_json if isinstance(processed_json, list) else [processed_json],
+                        creator_username=message.from_user.username,
+                        creator_name=message.from_user.full_name
+                    )
