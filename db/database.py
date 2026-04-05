@@ -1,4 +1,5 @@
 import sqlite3
+import uuid
 
 DB_PATH = "../sessions.db"
 
@@ -14,7 +15,6 @@ def init_db():
                 creator_name TEXT,
                 title TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                status TEXT DEFAULT 'active'
             );
             CREATE TABLE IF NOT EXISTS items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,8 +31,20 @@ def init_db():
                 username TEXT,
                 first_name TEXT,
                 last_name TEXT,
-                selected_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
-                UNIQUE(item_id, user_id)
             );
         """)
+
+def create_session(chat_id: int, message_id: int, creator_username: str, creator_name: str, title: str) -> str:
+    session_uuid = str(uuid.uuid4())
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            """INSERT INTO sessions (session_uuid, chat_id, message_id, creator_username, creator_name, title)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (session_uuid, chat_id, message_id, creator_username, creator_name, title)
+        )
+    return session_uuid
+
+def delete_session(session_uuid: str):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("DELETE FROM sessions WHERE session_uuid = ?", (session_uuid,))
