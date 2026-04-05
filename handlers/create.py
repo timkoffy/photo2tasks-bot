@@ -1,4 +1,6 @@
 from bot import bot
+from core.ocr_engine import photo2text_parser
+
 
 def register_handlers():
     @bot.message_handler(commands=['create'])
@@ -18,3 +20,9 @@ def register_handlers():
                 bot.send_message(chat_id, f"📝 Дополнительные требования добавлены в промпт: {additional_requirements}")
 
             bot.send_message(chat_id, "🔄 Начало конвертации...")
+
+            text = photo2text_parser(message)
+            if not text:
+                bot.reply_to(message, "Не удалось распознать текст.")
+            else:
+                bot.reply_to(message, f"Распознано:\n{text}")
