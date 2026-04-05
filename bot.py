@@ -1,4 +1,7 @@
 import telebot
+from dotenv import load_dotenv
+import os
+
 
 WELCOME_MESSAGE = """
 📸 Привет! Я Photo2Tasks Bot — твой помощник в распределении учебных вопросов и докладов.
@@ -20,7 +23,10 @@ WELCOME_MESSAGE = """
 """
 
 
-bot = telebot.TeleBot('8665508891:AAHD3n6ow5o1uLu5uRn32OihYdRdkuJ6Q4E')
+load_dotenv()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+bot = telebot.TeleBot(BOT_TOKEN)
 
 
 @bot.message_handler(commands=['start'])
