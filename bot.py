@@ -3,34 +3,14 @@ from dotenv import load_dotenv
 import os
 
 
-WELCOME_MESSAGE = """
-📸 Привет! Я Photo2Tasks Bot — твой помощник в распределении учебных вопросов и докладов.
-
-🔥 Как я работаю в группе:
-1. Добавь меня в групповой чат (мне нужны права на отправку сообщений).
-2. Отправь в чат фотографию с планом занятия.
-3. Бот сам распознает структуру и покажет кнопки для выбора.
-4. Каждый участник нажимает на кнопку — занимает тему.
-
-📌 Команды:
-/start — это сообщение
-/help — подробная инструкция
-/cancel — отменить текущее действие
-
-💡 Пример фото: любое методическое пособие с пунктами 1., 2., 3. (теория, практика, доклады).
-
-🚀 Попробуй прямо сейчас: отправь фото в этот чат или добавь меня в учебную группу!
-"""
-
-
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
+from handlers import start, create
 
-@bot.message_handler(commands=['start'])
-def start(user_info):
-    bot.send_message(user_info.chat.id, WELCOME_MESSAGE)
+start.register_handlers()
+create.register_handlers()
 
 bot.infinity_polling()
