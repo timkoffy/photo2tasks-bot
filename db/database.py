@@ -68,6 +68,11 @@ def get_session_by_message_id(chat_id: int, message_id: int) -> Optional[Dict[st
         ).fetchone()
         return dict(row) if row else None
 
+def get_session_by_id(session_id: int) -> Optional[Dict[str, Any]]:
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("SELECT * FROM sessions WHERE id = ?", (session_id,)).fetchone()
+        return dict(row) if row else None
 
 # item managing
 def add_item(session_id: int, item_number: int, title: str):
