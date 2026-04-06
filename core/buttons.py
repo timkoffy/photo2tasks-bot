@@ -46,8 +46,7 @@ def send_items_as_buttons(chat_id: int, message_id: int, session_id: int, sessio
         parse_mode="HTML"
     )
 
-
-def update_item_button(chat_id: int, message_id: int, session_id: int, item_number: int, username: str):
+def update_item_button(chat_id: int, message_id: int, session_id: int):
     session = get_session_by_id(session_id)
     if not session:
         return
@@ -76,6 +75,8 @@ def update_item_button(chat_id: int, message_id: int, session_id: int, item_numb
         button_text = f"{num}. {title[:47]}..." if len(title) > 50 else f"{num}. {title}"
         callback_data = f"select_{session_id}_{num}"
         markup.add(InlineKeyboardButton(button_text, callback_data=callback_data))
+
+    markup.add(InlineKeyboardButton("❌ Очистить выборы", callback_data=f"clear_my_{session_id}"))
 
     bot.edit_message_text(
         chat_id=chat_id,

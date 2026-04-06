@@ -58,8 +58,6 @@ def parse_lesson_to_json(ocr_text: str, additional_requirements: str = "") -> di
     {ocr_text[:6000]}
     """
 
-    print(prompt)
-
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=OPENROUTER_API_KEY,
@@ -81,9 +79,10 @@ def parse_lesson_to_json(ocr_text: str, additional_requirements: str = "") -> di
         json_string = response.choices[0].message.content
 
         result = json.loads(json_string)
+        print(additional_requirements)
         print("ВЫХЛОП: ", result)
         return result
 
     except Exception:
         print("error trying text->json")
-        return None
+        return parse_lesson_to_json(ocr_text, additional_requirements)

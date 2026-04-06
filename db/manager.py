@@ -12,6 +12,8 @@ def save_sections_to_db(chat_id: int, sections: list, creator_username: str, cre
 
         msg = bot.send_message(chat_id, f"📌 {title}\n\n🔄 Создаю кнопки...")
 
+        print(f"[DEBUG] save_sections_to_db: chat_id={chat_id} (type {type(chat_id)}), msg.message_id={msg.message_id}")
+
         session_uuid, session_id = create_session(
             chat_id=chat_id,
             message_id=msg.message_id,

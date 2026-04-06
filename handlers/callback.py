@@ -1,5 +1,5 @@
 from bot_instance import bot
-from db.database import select_item, get_items_by_session
+from db.database import select_item, get_items_by_session, clear_user_selections
 from core.buttons import update_item_button
 
 def register_handlers():
@@ -35,9 +35,18 @@ def register_handlers():
                 chat_id=call.message.chat.id,
                 message_id=call.message.message_id,
                 session_id=session_id,
-                item_number=item_number,
-                username=user.username or user.first_name
             )
             bot.answer_callback_query(call.id, f"✅ Вы записаны на пункт {item_number}")
         else:
             bot.answer_callback_query(call.id, "❌ Вы уже записаны на этот пункт", show_alert=True)
+
+    @bot.callback_query_handler(func=lambda call: call.data.startswith("clear_my_"))
+    def handle_clear_my_selections(call):
+        session_id = int(call.data.split("_")[2])
+        user_id = call.from_user.id
+        deleted = clear_user_selections(session_id, user_id)
+        if deleted:
+            update_item_button(call.message.chat.id, call.message.message_id, session_id)
+            bot.answer_callback_query(call.id, f"✅ Отменено {deleted} выборов")
+        else:
+            bot.answer_callback_query(call.id, "❌ У вас не было выборов в этой сессии", show_alert=True)

@@ -7,12 +7,10 @@ from handlers import start, create, callback
 
 def cleanup_scheduler():
     while True:
+        delete_expired_sessions(days=30)
         time.sleep(3600)
-        delete_expired_sessions(days=1)
 
 init_db()
-
-delete_expired_sessions(days=1)
 
 threading.Thread(target=cleanup_scheduler, daemon=True).start()
 

@@ -74,6 +74,14 @@ def get_session_by_id(session_id: int) -> Optional[Dict[str, Any]]:
         row = conn.execute("SELECT * FROM sessions WHERE id = ?", (session_id,)).fetchone()
         return dict(row) if row else None
 
+def delete_expired_sessions(days: int = 1):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "DELETE FROM sessions WHERE created_at < datetime('now', ?)",
+            (f"-{days} days",)
+        )
+
+
 # item managing
 def add_item(session_id: int, item_number: int, title: str):
     with sqlite3.connect(DB_PATH) as conn:
@@ -123,9 +131,11 @@ def get_selections_for_item(item_id: int) -> List[Dict[str, Any]]:
         ).fetchall()
         return [dict(row) for row in rows]
 
-def delete_expired_sessions(days: int = 1):
+def clear_user_selections(session_id: int, user_id: int) -> int:
     with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            "DELETE FROM sessions WHERE created_at < datetime('now', ?)",
-            (f"-{days} days",)
-        )
+        cursor = conn.execute("""
+            DELETE FROM selections
+            WHERE item_id IN (SELECT id FROM items WHERE session_id = ?)
+            AND user_id = ?
+        """, (session_id, user_id))
+        return cursor.rowcount

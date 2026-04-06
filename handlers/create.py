@@ -30,7 +30,22 @@ def register_handlers():
             if not text:
                 bot.reply_to(message, "Не удалось распознать текст.")
             else:
-                processed_json = parse_lesson_to_json(text, additional_requirements)
+                # processed_json = parse_lesson_to_json(text, additional_requirements)
+                processed_json = [
+                    {
+                        "title": "Подготовка докладов",
+                        "items": [
+                            "Корниловский мятеж",
+                            "Продовольственная диктатура: причины введения и реализация",
+                            "Создание Красной Армии и ВЧК",
+                            "Итоги Учредительного собрания",
+                            "Деятельность Всероссийского съезда Советов",
+                            "Установление советской власти в центре страны и регионах на материалах Саратовской губернии",
+                            "Формирование однопартийной системы",
+                            "Установление советской власти в Саратове"
+                        ]
+                    }
+                ]
                 if processed_json:
                     save_sections_to_db(
                         chat_id=message.chat.id,
