@@ -63,8 +63,6 @@ def parse_lesson_to_json(ocr_text: str, additional_requirements: str = "") -> di
         api_key=OPENROUTER_API_KEY,
     )
 
-    # arcee-ai/trinity-large-preview:free
-
     try:
         response = client.chat.completions.create(
             model="qwen/qwen3.6-plus:free",

@@ -7,7 +7,7 @@ from handlers import start, create, callback
 
 def cleanup_scheduler():
     while True:
-        delete_expired_sessions(days=30)
+        delete_expired_sessions(days=30, bot=bot)
         time.sleep(3600)
 
 init_db()

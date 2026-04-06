@@ -11,6 +11,7 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_uuid TEXT UNIQUE NOT NULL,
                 chat_id INTEGER NOT NULL,
+                thread_id INTEGER DEFAULT NULL,
                 message_id INTEGER NOT NULL,
                 creator_username TEXT,
                 creator_name TEXT,
@@ -38,19 +39,20 @@ def init_db():
         """)
 
 # session managing
-def create_session(chat_id: int, message_id: int, creator_username: str, creator_name: str, title: str) -> tuple:
+def create_session(chat_id: int, thread_id: int, message_id: int, creator_username: str, creator_name: str, title: str) -> tuple:
     session_uuid = str(uuid.uuid4())
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.execute(
-            """INSERT INTO sessions (session_uuid, chat_id, message_id, creator_username, creator_name, title)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (session_uuid, chat_id, message_id, creator_username, creator_name, title)
+            """INSERT INTO sessions (session_uuid, chat_id, thread_id, message_id, creator_username, creator_name, title)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (session_uuid, chat_id, thread_id, message_id, creator_username, creator_name, title)
         )
         session_id = cursor.lastrowid
     return session_uuid, session_id
 
 def delete_session(session_uuid: str):
     with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON;")
         conn.execute("DELETE FROM sessions WHERE session_uuid = ?", (session_uuid,))
 
 def get_session_by_uuid(session_uuid: str) -> Optional[Dict[str, Any]]:
@@ -74,12 +76,58 @@ def get_session_by_id(session_id: int) -> Optional[Dict[str, Any]]:
         row = conn.execute("SELECT * FROM sessions WHERE id = ?", (session_id,)).fetchone()
         return dict(row) if row else None
 
-def delete_expired_sessions(days: int = 1):
+def delete_expired_sessions(days: int = 1, bot=None):
     with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
-            "DELETE FROM sessions WHERE created_at < datetime('now', ?)",
+        conn.execute("PRAGMA foreign_keys = ON;")
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """SELECT s.id, s.chat_id, s.message_id, s.title
+               FROM sessions s
+               WHERE s.created_at < datetime('now', ?)""",
             (f"-{days} days",)
-        )
+        ).fetchall()
+        sessions = [dict(row) for row in rows]
+        if not sessions:
+            return
+
+        for sess in sessions:
+            session_id = sess['id']
+
+            items = conn.execute(
+                "SELECT * FROM items WHERE session_id = ? ORDER BY item_number",
+                (session_id,)
+            ).fetchall()
+
+            text = f"📋 <b>{sess['title']}</b>:\n\n"
+            for item in items:
+                item_dict = dict(item)
+                selections = conn.execute(
+                    "SELECT username, first_name FROM selections WHERE item_id = ?",
+                    (item_dict['id'],)
+                ).fetchall()
+                if selections:
+                    names = []
+                    for sel in selections:
+                        name = sel['username'] or sel['first_name'] or 'Аноним'
+                        names.append(f"@{name}" if sel['username'] else name)
+                    text += f"{item_dict['item_number']}. {item_dict['title']}\n   <i>Занят:</i> {', '.join(names)}\n\n"
+                else:
+                    text += f"{item_dict['item_number']}. {item_dict['title']}\n   <i>Свободен</i>\n\n"
+
+            final_text = f"🔒 Истекло\n\n{text}"
+
+            if bot:
+                try:
+                    bot.edit_message_text(
+                        chat_id=sess['chat_id'],
+                        message_id=sess['message_id'],
+                        text=final_text,
+                        reply_markup=None,
+                        parse_mode="HTML"
+                    )
+                except Exception as e:
+                    print(f"Не удалось отредактировать сообщение {sess['message_id']}: {e}")
+            conn.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
 
 
 # item managing
