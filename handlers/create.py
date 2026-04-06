@@ -33,7 +33,7 @@ def register_handlers():
                 processed_json = parse_lesson_to_json(text, additional_requirements)
                 if processed_json:
                     save_sections_to_db(
-                        chat_id=message.chat.id,
+                        message=message,
                         sections=processed_json if isinstance(processed_json, list) else [processed_json],
                         creator_username=message.from_user.username,
                         creator_name=message.from_user.full_name
