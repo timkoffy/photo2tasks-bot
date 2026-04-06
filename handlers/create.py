@@ -3,7 +3,7 @@ import json
 from bot_instance import bot
 from core.ocr_engine import photo2text_parser
 from core.parser import parse_lesson_to_json
-from db.db_manager import save_sections_to_db
+from db.manager import save_sections_to_db
 
 
 def register_handlers():

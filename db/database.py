@@ -122,3 +122,10 @@ def get_selections_for_item(item_id: int) -> List[Dict[str, Any]]:
             (item_id,)
         ).fetchall()
         return [dict(row) for row in rows]
+
+def delete_expired_sessions(days: int = 1):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "DELETE FROM sessions WHERE created_at < datetime('now', ?)",
+            (f"-{days} days",)
+        )
