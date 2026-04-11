@@ -21,7 +21,10 @@ def photo2text_parser(message) -> str:
 
         os.remove(temp_file_path)
 
+        print("успешное преобразование изображение -> текст")
+
         return extracted_text.strip()
 
     except Exception:
+        print("ОШИБКА преобразование изображение -> текст")
         return ""

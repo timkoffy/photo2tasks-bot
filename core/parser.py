@@ -68,6 +68,7 @@ def parse_lesson_to_json(ocr_text: str, additional_requirements: str = "", retry
     )
 
     try:
+        print(f"попытка парса текст -> json попытка {retry_count}")
         response = client.chat.completions.create(
             model="qwen/qwen3.6-plus:free",
             messages=[
