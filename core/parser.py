@@ -1,5 +1,4 @@
 import json
-
 from dotenv import load_dotenv
 import os
 from openai import OpenAI
@@ -8,8 +7,13 @@ load_dotenv()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-def parse_lesson_to_json(ocr_text: str, additional_requirements: str = "") -> dict:
+def parse_lesson_to_json(ocr_text: str, additional_requirements: str = "", retry_count: int = 0) -> dict:
     if not ocr_text or not ocr_text.strip():
+        return None
+
+    MAX_RETRIES = 4
+    if retry_count >= MAX_RETRIES:
+        print(f"❌ Превышено количество попыток ({MAX_RETRIES})")
         return None
 
     prompt = f"""
@@ -75,12 +79,11 @@ def parse_lesson_to_json(ocr_text: str, additional_requirements: str = "") -> di
         )
 
         json_string = response.choices[0].message.content
-
         result = json.loads(json_string)
         print(additional_requirements)
         print("ВЫХЛОП: ", result)
         return result
 
-    except Exception:
-        print("error trying text->json")
-        return parse_lesson_to_json(ocr_text, additional_requirements)
+    except Exception as e:
+        print(f"❌ Ошибка при преобразовании (попытка {retry_count + 1}/{MAX_RETRIES}): {e}")
+        return parse_lesson_to_json(ocr_text, additional_requirements, retry_count + 1)
